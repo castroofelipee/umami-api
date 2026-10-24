@@ -89,3 +89,39 @@ def build_top_routes_table(reports: list[SiteReport], top_n: int) -> str:
         for site_name, route, count in top_routes
     ]
     return render_table(["Site", "Route", "Views"], rows, left_columns=2)
+
+
+def build_report_embed(reports: list[SiteReport], start: datetime, end: datetime, top_n: int) -> dict:
+    total_visitors = sum(report.visitors for report in reports)
+    countries = sum_across_sites([report.countries for report in reports], top_n)
+    devices = sum_across_sites([[(device.capitalize(), count) for device, count in report.devices] for report in reports], top_n)
+
+    return {
+        "title": "📊 Weekly analytics",
+        # Overview goes in the description (4096 chars) rather than a field (1024) so it fits many sites.
+        # shortcut: past ~40 sites the overview outgrows the 6000-char embed limit, split it then.
+        "description": f"{start:%b %d} – {end:%b %d, %Y} · {len(reports)} site(s)\n{build_overview_table(reports)}",
+        "color": EMBED_COLOR,
+        "fields": [
+            {"name": "🌍 Where from", "value": build_ranking_table("Country", countries, total_visitors)},
+            {"name": "💻 Devices", "value": build_ranking_table("Device", devices, total_visitors)},
+            {"name": "🔥 Top routes", "value": build_top_routes_table(reports, top_n)},
+        ],
+        "footer": {"text": "Umami Analytics"},
+        "timestamp": end.isoformat(),
+    }
+
+
+async def post_message(client: httpx.AsyncClient, webhook_url: str, payload: dict) -> None:
+    for _ in range(MAX_RATE_LIMIT_RETRIES):
+        response = await client.post(webhook_url, json=payload)
+        if response.status_code != 429:
+            response.raise_for_status()
+            return
+        await asyncio.sleep(float(response.json().get("retry_after", 1)))
+    response.raise_for_status()
+
+
+async def send_report(webhook_url: str, reports: list[SiteReport], start: datetime, end: datetime, top_n: int) -> None:
+    async with httpx.AsyncClient(timeout=30) as client:
+        await post_message(client, webhook_url, {"embeds": [build_report_embed(reports, start, end, top_n)]})
