@@ -33,3 +33,34 @@ async def list_websites(client: httpx.AsyncClient) -> list[dict]:
     response.raise_for_status()
     body = response.json()
     return body["data"] if isinstance(body, dict) else body
+
+
+async def fetch_metric(client: httpx.AsyncClient, website_id: str, period: dict, metric_type: str) -> list[tuple[str, int]]:
+    response = await client.get(f"/api/websites/{website_id}/metrics", params={**period, "type": metric_type})
+    response.raise_for_status()
+    return [(row["x"] or "(unknown)", int(row["y"])) for row in response.json()]
+
+
+async def fetch_site_report(client: httpx.AsyncClient, website: dict, start: datetime, end: datetime) -> SiteReport:
+    website_id = website["id"]
+    period = {"startAt": int(start.timestamp() * 1000), "endAt": int(end.timestamp() * 1000)}
+
+    response = await client.get(f"/api/websites/{website_id}/stats", params=period)
+    response.raise_for_status()
+    stats = response.json()
+
+    try:
+        routes = await fetch_metric(client, website_id, period, "path")
+    except httpx.HTTPStatusError:
+        routes = await fetch_metric(client, website_id, period, "url")  # Umami v2 calls it "url"
+
+    return SiteReport(
+        name=website["name"],
+        domain=website.get("domain") or "",
+        visits=read_stat(stats.get("visits")),
+        visitors=read_stat(stats.get("visitors")),
+        pageviews=read_stat(stats.get("pageviews")),
+        countries=await fetch_metric(client, website_id, period, "country"),
+        devices=await fetch_metric(client, website_id, period, "device"),
+        routes=routes,
+    )
