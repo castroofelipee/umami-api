@@ -24,3 +24,7 @@ Run a single worker: the scheduler lives in-process.
 ```bash
 uv run pytest
 ```
+
+## License
+
+[AGPL-3.0-or-later](LICENSE)

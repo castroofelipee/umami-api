@@ -6,6 +6,8 @@ build-backend = "hatchling.build"
 name = "umami-report"
 version = "0.1.0"
 description = "Weekly Umami analytics report sent to Discord."
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
