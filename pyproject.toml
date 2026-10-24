@@ -12,6 +12,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "httpx>=0.28.1",
+    "tzdata>=2026.5",
     "uvicorn[standard]>=0.30",
     "venvalid>=0.3.0",
 ]

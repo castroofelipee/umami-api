@@ -1,0 +1,20 @@
+services:
+  umami-report:
+    build: .
+    restart: unless-stopped
+    # One replica only: the scheduler runs in-process, each extra copy sends a duplicate report.
+    deploy:
+      replicas: 1
+    expose:
+      - "8000"
+    environment:
+      ENVIRONMENT: production
+      UMAMI_URL: ${UMAMI_URL:?}
+      UMAMI_USERNAME: ${UMAMI_USERNAME:?}
+      UMAMI_PASSWORD: ${UMAMI_PASSWORD:?}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:?}
+      TRIGGER_TOKEN: ${TRIGGER_TOKEN:-}
+      REPORT_WEEKDAY: ${REPORT_WEEKDAY:-0}
+      REPORT_HOUR: ${REPORT_HOUR:-9}
+      TIMEZONE: ${TIMEZONE:-America/Sao_Paulo}
+      TOP_N: ${TOP_N:-5}

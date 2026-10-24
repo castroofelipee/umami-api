@@ -14,6 +14,16 @@ uv run uvicorn main:app --port 8000
 Run a single worker: the scheduler lives in-process.
 `/docs`, `/redoc` and `/openapi.json` exist only with `ENVIRONMENT=development`.
 
+## Deploy (Docker / Coolify)
+
+```bash
+docker compose up -d --build
+```
+
+Set `UMAMI_URL`, `UMAMI_USERNAME`, `UMAMI_PASSWORD` and `DISCORD_WEBHOOK_URL` (plus optional
+`TRIGGER_TOKEN`) as environment variables. In Coolify, pick the Docker Compose build pack for
+this repository and fill them in under Environment Variables. Keep a single replica.
+
 ## Endpoints
 
 - `POST /reports/weekly` — send the report now. Needs header `X-Trigger-Token: $TRIGGER_TOKEN`
