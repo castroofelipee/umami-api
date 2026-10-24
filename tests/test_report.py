@@ -47,3 +47,12 @@ def test_render_table_aligns_columns():
     lines = table.splitlines()[1:-1]
     assert len({len(line) for line in lines}) == 1
     assert "│ a    │     1 │" in table
+
+
+@pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json"])
+def test_route_listings_hidden_in_production(api_client: TestClient, path: str):
+    assert api_client.get(path).status_code == 404
+
+
+def test_trigger_requires_token(api_client: TestClient):
+    assert api_client.post("/reports/weekly", headers={"X-Trigger-Token": "anything"}).status_code == 403
